@@ -1,7 +1,7 @@
 from tqdm import tqdm
-import torch
+import numpy as np
 
-def make_prediction(model, loader, device):
+def make_prediction(model, loader, device, mode="image", threshold=0.5):
     model.to(device)
     model.eval()
 
@@ -9,8 +9,10 @@ def make_prediction(model, loader, device):
     for noised_images, gt_images, img_names, patch_nums in tqdm(loader):
         noised_images = noised_images.to(device)
         output = model(noised_images)
+        if mode == "image":
+            output = (output >= threshold).float()
         predictions = output.cpu().detach().numpy()
-        for pred, key in zip(predictions, img_names):
-            results[key] = pred
+        for pred, name, patch in zip(predictions, img_names, patch_nums):
+            results[f"{name}_{patch}"] = pred
 
     return results
