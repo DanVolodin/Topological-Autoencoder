@@ -71,7 +71,7 @@ def plot_scheduler(scheduler, optimizer, steps, title='Scheduler'):
     plt.show()
 
 
-def eval_epoch(model, loader, lambda_ce, lambda_topo, device):
+def eval_epoch(model, loader, lambda_ce, lambda_topo, device, filtration):
 
     topo_loss = 0
     ce_loss = 0
@@ -89,8 +89,8 @@ def eval_epoch(model, loader, lambda_ce, lambda_topo, device):
 
         predictions = model(data)
 
-        batch_ce_loss = BCELoss(reduction="sum")(predictions, target)
-        batch_topo_loss = TopoLoss(reduction="sum")(predictions, target)
+        batch_ce_loss = BCELoss(reduction="sum")(predictions, target) / (data.shape[2] * data.shape[3])
+        batch_topo_loss = TopoLoss(reduction="sum", filtration=filtration)(predictions, target)
 
         loss = lambda_ce * batch_ce_loss + lambda_topo * batch_topo_loss
         
@@ -121,7 +121,7 @@ def eval_epoch(model, loader, lambda_ce, lambda_topo, device):
     return loss, metrics
 
 
-def train_epoch(model, optimizer, train_loader, lambda_ce, lambda_topo, device, calc_betti):
+def train_epoch(model, optimizer, train_loader, lambda_ce, lambda_topo, device, calc_betti, filtration):
 
     topo_loss = 0
     ce_loss = 0
@@ -142,8 +142,8 @@ def train_epoch(model, optimizer, train_loader, lambda_ce, lambda_topo, device, 
 
         predictions = model(data)
 
-        batch_ce_loss = BCELoss(reduction="sum")(predictions, target)
-        batch_topo_loss = TopoLoss(reduction="sum")(predictions, target)
+        batch_ce_loss = BCELoss(reduction="sum")(predictions, target) / (data.shape[2] * data.shape[3])
+        batch_topo_loss = TopoLoss(reduction="sum", filtration=filtration)(predictions, target)
 
         loss = lambda_ce * batch_ce_loss + lambda_topo * batch_topo_loss
         total_loss += loss.item()
@@ -183,7 +183,8 @@ def train_epoch(model, optimizer, train_loader, lambda_ce, lambda_topo, device, 
 
 
 def fit(model, optimizer, n_epochs, train_loader, val_loader, lambda_ce, lambda_topo, device, scheduler=None,
-        title="Model", calc_train_betti=True, save_checkpoints=False, save_path=None, log_wandb=False, save_frequency=1):
+        title="Model", calc_train_betti=True, save_checkpoints=False, save_path=None, log_wandb=False, save_frequency=1,
+        filtration=None):
 
     if log_wandb:
         wandb.watch(model, log="all", log_freq=200)
@@ -194,8 +195,8 @@ def fit(model, optimizer, n_epochs, train_loader, val_loader, lambda_ce, lambda_
 
     for epoch in range(n_epochs):
 
-        train_loss, train_metrics = train_epoch(model, optimizer, train_loader, lambda_ce, lambda_topo, device, calc_train_betti)
-        val_loss, val_metrics = eval_epoch(model, val_loader, lambda_ce, lambda_topo, device)
+        train_loss, train_metrics = train_epoch(model, optimizer, train_loader, lambda_ce, lambda_topo, device, calc_train_betti, filtration)
+        val_loss, val_metrics = eval_epoch(model, val_loader, lambda_ce, lambda_topo, device, filtration)
 
         train_loss_log.append(train_loss)
         train_metrics_log.append(train_metrics)

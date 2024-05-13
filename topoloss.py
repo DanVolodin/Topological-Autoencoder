@@ -6,13 +6,14 @@ from gudhi.wasserstein import wasserstein_distance
 from topo_image import precompute_topo_images
 
 class TopoLoss(nn.Module):
-    def __init__(self, reduction="mean"):
+    def __init__(self, reduction="mean", filtration=None):
         super().__init__()
         self.reduction = reduction
+        self.filtration = filtration
 
     def forward(self, inputs, targets):
-        inputs = precompute_topo_images(inputs)
-        targets = precompute_topo_images(targets)
+        inputs = precompute_topo_images(inputs, self.filtration)
+        targets = precompute_topo_images(targets, self.filtration)
 
         self.losses = torch.empty((0), device=inputs[0].device)
         for input, target in zip(inputs, targets):

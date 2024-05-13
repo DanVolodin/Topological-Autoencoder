@@ -60,9 +60,12 @@ def calc_test_metrics(loader, predictions_dict):
 
 def evaluate_model(net, loader, device, threshold=0.5, start_ind=0):
 
-    results = make_prediction(net, loader, device, threshold=threshold)
-    results_proba = make_prediction(net, loader, device, mode="proba")
-    print(calc_test_metrics(loader, results))
+    predictions_proba = make_prediction(net, loader, device, mode="proba")
+    predictions = dict()
+    for key, prediciton in predictions_proba.items():
+        predictions[key] = (prediciton >= threshold).astype(float)
+
+    print(calc_test_metrics(loader, predictions))
 
     fig = plt.figure(figsize=(10, 32))
     for idx in np.arange(8):
@@ -74,11 +77,11 @@ def evaluate_model(net, loader, device, threshold=0.5, start_ind=0):
 
         # model output
         ax2 = fig.add_subplot(16, 4, 4 * (idx) + 2, xticks=[], yticks=[])
-        ax2.imshow(np.squeeze(results[f"{img_name}_{patch_num}"]), cmap='grey')
+        ax2.imshow(np.squeeze(predictions[f"{img_name}_{patch_num}"]), cmap='grey')
 
         # model output proba
         ax3 = fig.add_subplot(16, 4, 4 * (idx) + 3, xticks=[], yticks=[])
-        ax3.imshow(np.squeeze(results_proba[f"{img_name}_{patch_num}"]), cmap='grey')
+        ax3.imshow(np.squeeze(predictions_proba[f"{img_name}_{patch_num}"]), cmap='grey')
 
         # gt image
         ax4 = fig.add_subplot(16, 4, 4 * idx + 4, xticks=[], yticks=[])
@@ -87,4 +90,4 @@ def evaluate_model(net, loader, device, threshold=0.5, start_ind=0):
         fig.tight_layout()
     plt.show()
     
-    return results, results_proba
+    return predictions, predictions_proba

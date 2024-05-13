@@ -4,8 +4,7 @@ import gudhi as gd
 
 class TopoImage(object):
     def __init__(self, img):
-        # Пока берем просто grayscale
-        self.image = 1 - np.squeeze(img)
+        self.image = np.squeeze(img)
         self.shape = self.image.shape
         self.device = self.image.device
 
@@ -62,7 +61,30 @@ class TopoImage(object):
         return pd0, pd1
     
 
-def precompute_topo_images(img_batch):
+class HeightFiltration(object):
+    def __init__(self, img_shape, direction):
+
+        direction = direction * 1.0 / np.linalg.norm(direction, 1)
+
+        indicies_dim_0 = np.tile(np.arange(img_shape[0]), (img_shape[1], 1)).T
+        indicies_dim_1 = np.tile(np.arange(img_shape[1]), (img_shape[0], 1))
+        indicies = np.stack([indicies_dim_0, indicies_dim_1]).transpose(1, 2, 0)
+        
+        self.filtration_matrix = torch.tensor(np.dot(indicies, direction))
+
+        if self.filtration_matrix.min() <= 0:
+            self.filtration_matrix -= self.filtration_matrix.min()
+
+        self.filtration_matrix /= self.filtration_matrix.max()
+
+    def __call__(self, img_batch):
+        return (img_batch + self.filtration_matrix[np.newaxis, np.newaxis, ...]) / 2
+    
+
+def precompute_topo_images(img_batch, filtration=None):
+    img_batch = 1 - img_batch
+    if filtration:
+        img_batch = filtration(img_batch)
     topo_images = []
     for img in img_batch:
         topo_images.append(TopoImage(img))

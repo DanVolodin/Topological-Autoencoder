@@ -80,7 +80,7 @@ class ImagesDataset(Dataset):
             noised_patch = self.get_img(self.noised_path, img_name)
             if self.patch_mode == "resize":
                 noised_patch = A.Resize(self.patch_size[0], self.patch_size[1])(image=noised_patch)["image"]
-        noised_patch = (noised_patch > 0).astype(np.float32)
+        # noised_patch = (noised_patch > 0).astype(np.float32)
         
         img_patch = A.pytorch.transforms.ToTensorV2()(image=img_patch)["image"]
 
