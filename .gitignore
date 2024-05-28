@@ -4,5 +4,3 @@ models/*
 wandb/*
 __pycache__/*
 docs/*
-topoloss_301123.ipynb
-topological_loss.ipynb
